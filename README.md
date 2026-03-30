@@ -47,6 +47,8 @@ ccwaste --inject                 # write rules to ~/.claude/ccwaste-rules.md
 
 ## StatusLine integration
 
+### Standalone
+
 Add to `~/.claude/settings.json`:
 
 ```json
@@ -58,7 +60,52 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Shows: `🗑 28M (1%) 💀subagents 10M 36% 🔄reviews 8.6M 30%`
+### Filter by current project
+
+Use `--project-dir` to show waste only for the active project:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "ccwaste --status -d 7 --project-dir \"$PWD\""
+  }
+}
+```
+
+### Add to an existing statusLine script
+
+If you already have a custom statusLine script (Node.js, bash, etc.), append ccwaste output:
+
+```bash
+# In your statusline script
+WASTE=$(ccwaste --status -d 7 --project-dir "$PROJECT_DIR" 2>/dev/null)
+echo "$YOUR_LINE | $WASTE"
+```
+
+For Node.js statusLine scripts that receive JSON on stdin:
+
+```javascript
+// Inside your statusline Node.js script
+const { execSync } = require("child_process");
+const projDir = d.workspace?.project_dir || "";
+const dirFlag = projDir ? ` --project-dir ${JSON.stringify(projDir)}` : "";
+try {
+  const waste = execSync(`ccwaste --status -d 7${dirFlag} 2>/dev/null`, {
+    timeout: 3000, encoding: "utf8"
+  }).trim();
+  if (waste) line += ` | ${waste}`;
+} catch(e) {}
+```
+
+### Output format
+
+```
+🗑 28M (1%) 💀subagents 10M 36% 🔄reviews 8.6M 30%
+│            │                   └─ 2nd top waste category
+│            └─ top waste category with tokens and %
+└─ total waste tokens (% of all tokens)
+```
 
 ## Prompt injection
 
