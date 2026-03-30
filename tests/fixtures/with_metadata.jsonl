@@ -1,0 +1,8 @@
+{"type":"file-history-snapshot","snapshot":{"files":["/tmp/a.rs","/tmp/b.rs","/tmp/c.rs"]},"timestamp":"2026-03-30T10:00:00Z","uuid":"fh1"}
+{"type":"file-history-snapshot","snapshot":{"files":["/tmp/d.rs","/tmp/e.rs"]},"timestamp":"2026-03-30T10:00:01Z","uuid":"fh2"}
+{"type":"file-history-snapshot","snapshot":{"files":["/tmp/f.rs"]},"timestamp":"2026-03-30T10:00:02Z","uuid":"fh3"}
+{"type":"queue-operation","operation":"enqueue","content":{"task":"build","priority":1},"timestamp":"2026-03-30T10:00:03Z","uuid":"qo1"}
+{"type":"queue-operation","operation":"dequeue","content":{"task":"test","priority":2},"timestamp":"2026-03-30T10:00:04Z","uuid":"qo2"}
+{"type":"system","subtype":"stop_hook_summary","content":{"hook":"pre-commit","duration_ms":1500,"result":"success"},"timestamp":"2026-03-30T10:00:05Z","uuid":"sh1"}
+{"type":"system","subtype":"stop_hook_summary","content":{"hook":"post-commit","duration_ms":800,"result":"success"},"timestamp":"2026-03-30T10:00:06Z","uuid":"sh2"}
+{"type":"assistant","message":{"id":"msg_1","role":"assistant","content":[{"type":"text","text":"hello"}],"usage":{"input_tokens":100,"output_tokens":20}},"timestamp":"2026-03-30T10:00:07Z","uuid":"a1"}

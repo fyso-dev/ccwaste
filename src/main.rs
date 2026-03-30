@@ -1,3 +1,4 @@
+mod analyzers;
 mod parser;
 mod scanner;
 mod types;
