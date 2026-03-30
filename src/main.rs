@@ -44,13 +44,19 @@ struct Cli {
     /// Filter by project directory (matches against JSONL project paths)
     #[arg(long)]
     project_dir: Option<String>,
+
+    /// Path to Claude instance directory (default: ~/.claude). Use to target ~/.claude-work, ~/.claude-personal, etc.
+    #[arg(long, short = 'C')]
+    claude_dir: Option<String>,
 }
 
 fn main() {
     let cli = Cli::parse();
     let today = Local::now().date_naive();
 
-    let found = scanner::find_sessions(cli.days, cli.project_dir.as_deref());
+    let claude_dir_path: Option<std::path::PathBuf> = cli.claude_dir.as_deref().map(std::path::PathBuf::from);
+    let claude_dir = claude_dir_path.as_deref();
+    let found = scanner::find_sessions(cli.days, cli.project_dir.as_deref(), claude_dir);
     if found.is_empty() {
         if cli.json {
             let empty = Report {
@@ -149,7 +155,7 @@ fn main() {
         let rules = inject::generate_rules(&report);
         println!("{}", rules);
     } else if cli.inject {
-        inject::inject_rules(&report);
+        inject::inject_rules(&report, claude_dir);
     } else if cli.json {
         json_report::print_json(&report);
     } else {

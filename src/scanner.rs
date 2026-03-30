@@ -11,12 +11,15 @@ pub struct FoundSession {
     pub project_name: String,
 }
 
-pub fn find_sessions(days: u32, project_dir: Option<&str>) -> Vec<FoundSession> {
+pub fn find_sessions(days: u32, project_dir: Option<&str>, claude_base: Option<&std::path::Path>) -> Vec<FoundSession> {
     let today = Local::now().date_naive();
     let since = today - chrono::Duration::days(days as i64 - 1);
-    let claude_dir = dirs::home_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".claude/projects");
+    let claude_dir = match claude_base {
+        Some(base) => base.join("projects"),
+        None => dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join(".claude/projects"),
+    };
     if !claude_dir.exists() {
         return vec![];
     }

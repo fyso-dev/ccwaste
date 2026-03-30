@@ -107,12 +107,15 @@ pub fn generate_rules(report: &Report) -> String {
     lines.join("\n")
 }
 
-pub fn inject_rules(report: &Report) {
+pub fn inject_rules(report: &Report, claude_base: Option<&std::path::Path>) {
     let rules_content = generate_rules(report);
 
-    let claude_dir = dirs::home_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".claude");
+    let claude_dir = match claude_base {
+        Some(base) => base.to_path_buf(),
+        None => dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join(".claude"),
+    };
 
     let rules_path = claude_dir.join("ccwasted-rules.md");
     let claude_md_path = claude_dir.join("CLAUDE.md");
