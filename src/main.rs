@@ -11,7 +11,7 @@ use clap::Parser;
 use types::{Report, SessionInfo, SessionReport};
 
 #[derive(Parser)]
-#[command(name = "ccwaste", version, about = "Claude Code conversation waste analyzer")]
+#[command(name = "ccwasted", version, about = "Claude Code conversation waste analyzer")]
 struct Cli {
     /// Output report as JSON
     #[arg(long)]
@@ -29,7 +29,7 @@ struct Cli {
     #[arg(long, short, default_value = "waste", value_parser = ["waste", "ratio", "tokens"])]
     order: String,
 
-    /// Write rules to ~/.claude/ccwaste-rules.md and add @include to CLAUDE.md
+    /// Write rules to ~/.claude/ccwasted-rules.md and add @include to CLAUDE.md
     #[arg(long)]
     inject: bool,
 

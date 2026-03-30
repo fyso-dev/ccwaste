@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-REPO="fyso-dev/ccwaste"
+REPO="fyso-dev/ccwasted"
 LATEST=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | cut -d'"' -f4)
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -20,13 +20,13 @@ case "$ARCH" in
 esac
 
 TARGET="${ARCH}-${OS}"
-URL="https://github.com/$REPO/releases/download/$LATEST/ccwaste-$TARGET"
+URL="https://github.com/$REPO/releases/download/$LATEST/ccwasted-$TARGET"
 
 INSTALL_DIR="${CARGO_HOME:-$HOME/.cargo}/bin"
 mkdir -p "$INSTALL_DIR"
 
-echo "Downloading ccwaste $LATEST for $TARGET..."
-curl -fsSL "$URL" -o "$INSTALL_DIR/ccwaste"
-chmod +x "$INSTALL_DIR/ccwaste"
-echo "Installed ccwaste to $INSTALL_DIR/ccwaste"
-echo "Run 'ccwaste' to get started"
+echo "Downloading ccwasted $LATEST for $TARGET..."
+curl -fsSL "$URL" -o "$INSTALL_DIR/ccwasted"
+chmod +x "$INSTALL_DIR/ccwasted"
+echo "Installed ccwasted to $INSTALL_DIR/ccwasted"
+echo "Run 'ccwasted' to get started"

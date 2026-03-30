@@ -1,5 +1,5 @@
 [package]
-name = "ccwaste"
+name = "ccwasted"
 version = "0.1.0"
 edition = "2021"
 description = "Claude Code conversation waste analyzer"

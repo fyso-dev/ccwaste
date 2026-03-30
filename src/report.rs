@@ -64,7 +64,7 @@ pub fn print_report(report: &Report) {
     let separator = "───────────────────────────────────────────";
 
     println!();
-    println!("{}", format!("ccwaste — {}", report.date).bold());
+    println!("{}", format!("ccwasted — {}", report.date).bold());
 
     if report.show_sessions {
         print_sessions_view(report, separator);

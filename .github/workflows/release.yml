@@ -51,14 +51,14 @@ jobs:
 
       - name: Package binary
         run: |
-          cp target/${{ matrix.target }}/release/ccwaste ccwaste-${{ matrix.target }}
-          chmod +x ccwaste-${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/ccwasted ccwasted-${{ matrix.target }}
+          chmod +x ccwasted-${{ matrix.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ccwaste-${{ matrix.target }}
-          path: ccwaste-${{ matrix.target }}
+          name: ccwasted-${{ matrix.target }}
+          path: ccwasted-${{ matrix.target }}
 
   release:
     name: Create Release
@@ -75,7 +75,7 @@ jobs:
       - name: Collect binaries
         run: |
           mkdir release
-          for dir in artifacts/ccwaste-*; do
+          for dir in artifacts/ccwasted-*; do
             cp "$dir"/* release/
           done
           ls -la release/

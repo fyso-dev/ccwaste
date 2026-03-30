@@ -68,14 +68,14 @@ pub fn generate_rules(report: &Report) -> String {
     }
 
     let mut lines = vec![];
-    lines.push("# ccwaste rules — auto-generated token optimization rules".to_string());
+    lines.push("# ccwasted rules — auto-generated token optimization rules".to_string());
     lines.push(format!(
         "# Based on {} of waste across {} sessions ({} days)",
         format_tokens(total_wasted),
         report.session_count(),
         report.date
     ));
-    lines.push("# Re-run `ccwaste --inject` to update based on latest data".to_string());
+    lines.push("# Re-run `ccwasted --inject` to update based on latest data".to_string());
     lines.push(String::new());
 
     let mut rule_count = 0;
@@ -114,7 +114,7 @@ pub fn inject_rules(report: &Report) {
         .unwrap_or_else(|| PathBuf::from("."))
         .join(".claude");
 
-    let rules_path = claude_dir.join("ccwaste-rules.md");
+    let rules_path = claude_dir.join("ccwasted-rules.md");
     let claude_md_path = claude_dir.join("CLAUDE.md");
 
     // Write rules file
@@ -127,7 +127,7 @@ pub fn inject_rules(report: &Report) {
     }
 
     // Add @include to CLAUDE.md if not already there
-    let include_line = "@ccwaste-rules.md";
+    let include_line = "@ccwasted-rules.md";
     let claude_md_content = fs::read_to_string(&claude_md_path).unwrap_or_default();
 
     if !claude_md_content.contains(include_line) {

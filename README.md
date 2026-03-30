@@ -1,31 +1,31 @@
-# ccwaste
+# ccwasted
 
 CLI tool that analyzes Claude Code conversation logs to find wasted tokens. No AI — pure static analysis of JSONL files.
 
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fyso-dev/ccwaste/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/fyso-dev/ccwasted/main/install.sh | bash
 ```
 
 Or with Cargo:
 ```bash
-cargo install --git https://github.com/fyso-dev/ccwaste --path ccwaste
+cargo install --git https://github.com/fyso-dev/ccwasted --path ccwasted
 ```
 
 ## Usage
 
 ```bash
-ccwaste                          # last 30 days, grouped by project
-ccwaste -d 7                     # last week
-ccwaste -d 1                     # today only
-ccwaste -o ratio                 # sort by waste ratio
-ccwaste --sessions               # per-session breakdown
-ccwaste --project-dir /path/to   # filter by project
-ccwaste --json                   # JSON output
-ccwaste --status                 # one-liner for Claude Code statusLine
-ccwaste --rules                  # print optimization rules
-ccwaste --inject                 # write rules to ~/.claude/ccwaste-rules.md
+ccwasted                          # last 30 days, grouped by project
+ccwasted -d 7                     # last week
+ccwasted -d 1                     # today only
+ccwasted -o ratio                 # sort by waste ratio
+ccwasted --sessions               # per-session breakdown
+ccwasted --project-dir /path/to   # filter by project
+ccwasted --json                   # JSON output
+ccwasted --status                 # one-liner for Claude Code statusLine
+ccwasted --rules                  # print optimization rules
+ccwasted --inject                 # write rules to ~/.claude/ccwasted-rules.md
 ```
 
 ## What it detects
@@ -55,7 +55,7 @@ Add to `~/.claude/settings.json`:
 {
   "statusLine": {
     "type": "command",
-    "command": "ccwaste --status -d 7"
+    "command": "ccwasted --status -d 7"
   }
 }
 ```
@@ -68,18 +68,18 @@ Use `--project-dir` to show waste only for the active project:
 {
   "statusLine": {
     "type": "command",
-    "command": "ccwaste --status -d 7 --project-dir \"$PWD\""
+    "command": "ccwasted --status -d 7 --project-dir \"$PWD\""
   }
 }
 ```
 
 ### Add to an existing statusLine script
 
-If you already have a custom statusLine script (Node.js, bash, etc.), append ccwaste output:
+If you already have a custom statusLine script (Node.js, bash, etc.), append ccwasted output:
 
 ```bash
 # In your statusline script
-WASTE=$(ccwaste --status -d 7 --project-dir "$PROJECT_DIR" 2>/dev/null)
+WASTE=$(ccwasted --status -d 7 --project-dir "$PROJECT_DIR" 2>/dev/null)
 echo "$YOUR_LINE | $WASTE"
 ```
 
@@ -91,7 +91,7 @@ const { execSync } = require("child_process");
 const projDir = d.workspace?.project_dir || "";
 const dirFlag = projDir ? ` --project-dir ${JSON.stringify(projDir)}` : "";
 try {
-  const waste = execSync(`ccwaste --status -d 7${dirFlag} 2>/dev/null`, {
+  const waste = execSync(`ccwasted --status -d 7${dirFlag} 2>/dev/null`, {
     timeout: 3000, encoding: "utf8"
   }).trim();
   if (waste) line += ` | ${waste}`;
@@ -112,8 +112,8 @@ try {
 Generate and inject optimization rules based on your actual waste data:
 
 ```bash
-ccwaste --inject   # writes ~/.claude/ccwaste-rules.md + adds @include to CLAUDE.md
-ccwaste --rules    # preview rules without writing
+ccwasted --inject   # writes ~/.claude/ccwasted-rules.md + adds @include to CLAUDE.md
+ccwasted --rules    # preview rules without writing
 ```
 
 ## License
