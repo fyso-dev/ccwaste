@@ -1,5 +1,6 @@
 use super::WasteAnalyzer;
 use crate::types::{ContentBlock, Session, WasteFinding};
+use std::collections::HashMap;
 
 pub struct ModelOverkillAnalyzer;
 
@@ -8,7 +9,6 @@ const SIMPLE_TOOLS: &[&str] = &["Read", "Glob", "Bash", "LS"];
 fn is_simple_bash(input: &serde_json::Value) -> bool {
     if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
         let trimmed = cmd.trim();
-        // Simple commands: ls, cat, pwd, echo, which, file, wc, head, tail, etc.
         let simple_prefixes = [
             "ls", "cat", "pwd", "echo", "which", "file", "wc", "head", "tail", "mkdir", "touch",
             "rm ", "cp ", "mv ",
@@ -27,7 +27,7 @@ impl WasteAnalyzer for ModelOverkillAnalyzer {
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
         let mut overkill_turns = 0u64;
         let mut total_waste_tokens = 0u64;
-        let mut details = vec![];
+        let mut tool_turn_counts: HashMap<String, u64> = HashMap::new();
 
         for line in &session.lines {
             if line.line_type != "assistant" {
@@ -36,7 +36,6 @@ impl WasteAnalyzer for ModelOverkillAnalyzer {
             let Some(ref msg) = line.message else {
                 continue;
             };
-            // Check if model contains "opus" (case-insensitive)
             let is_opus = msg
                 .model
                 .as_deref()
@@ -49,7 +48,6 @@ impl WasteAnalyzer for ModelOverkillAnalyzer {
                 continue;
             };
 
-            // Check if message ONLY contains tool_use blocks for simple tools
             let blocks: Vec<ContentBlock> = content
                 .iter()
                 .filter_map(|v| ContentBlock::from_value(v))
@@ -77,21 +75,13 @@ impl WasteAnalyzer for ModelOverkillAnalyzer {
                     .as_ref()
                     .and_then(|u| u.input_tokens)
                     .unwrap_or(0);
-                // Waste = 4/5 of input_tokens (the overpay portion)
                 let waste = input_tokens * 4 / 5;
                 total_waste_tokens += waste;
-                let tool_names: Vec<String> = blocks
-                    .iter()
-                    .filter_map(|b| match b {
-                        ContentBlock::ToolUse { name, .. } => Some(name.clone()),
-                        _ => None,
-                    })
-                    .collect();
-                details.push(format!(
-                    "opus used for simple tool call(s): {} (~{} tokens wasted)",
-                    tool_names.join(", "),
-                    waste
-                ));
+                for b in &blocks {
+                    if let ContentBlock::ToolUse { name, .. } = b {
+                        *tool_turn_counts.entry(name.clone()).or_default() += 1;
+                    }
+                }
             }
         }
 
@@ -99,11 +89,18 @@ impl WasteAnalyzer for ModelOverkillAnalyzer {
             return vec![];
         }
 
+        let mut sorted_tools: Vec<_> = tool_turn_counts.into_iter().collect();
+        sorted_tools.sort_by(|a, b| b.1.cmp(&a.1));
+        let details = sorted_tools
+            .iter()
+            .map(|(name, count)| format!("{}: {} turns", name, count))
+            .collect();
+
         vec![WasteFinding {
             category: "model_overkill".to_string(),
             description: format!(
-                "{} turns used opus for simple tool calls, wasting ~{} tokens",
-                overkill_turns, total_waste_tokens
+                "{} opus turns used for simple tool calls",
+                overkill_turns
             ),
             estimated_tokens: total_waste_tokens,
             details,
@@ -164,6 +161,7 @@ mod tests {
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].category, "model_overkill");
         assert_eq!(findings[0].estimated_tokens, 800); // 4/5 of 1000
+        assert!(findings[0].details.iter().any(|d| d.contains("Read: 1 turns")));
     }
 
     #[test]

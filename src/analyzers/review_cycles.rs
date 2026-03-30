@@ -38,28 +38,35 @@ impl WasteAnalyzer for ReviewCyclesAnalyzer {
             }
         }
 
-        let mut findings = vec![];
-        for (pr, count) in &pr_dispatches {
-            if *count <= 2 {
-                continue;
-            }
-            let extra = count - 2;
+        let mut details = vec![];
+        let mut total_waste = 0u64;
+        let mut total_extra = 0u64;
+
+        let mut sorted_prs: Vec<_> = pr_dispatches.iter().filter(|(_, c)| **c > 2).collect();
+        sorted_prs.sort_by(|a, b| b.1.cmp(a.1));
+
+        for (pr, count) in &sorted_prs {
+            let extra = *count - 2;
+            total_extra += extra;
             let waste = extra * TOKENS_PER_DISPATCH;
-            findings.push(WasteFinding {
-                category: "review_cycles".to_string(),
-                description: format!(
-                    "PR {} dispatched {} times ({} excess)",
-                    pr, count, extra
-                ),
-                estimated_tokens: waste,
-                details: vec![format!(
-                    "~{} tokens per dispatch, {} extra dispatches",
-                    TOKENS_PER_DISPATCH, extra
-                )],
-            });
+            total_waste += waste;
+            details.push(format!("{}: {} dispatches ({} extra)", pr, count, extra));
         }
 
-        findings
+        if sorted_prs.is_empty() {
+            return vec![];
+        }
+
+        vec![WasteFinding {
+            category: "review_cycles".to_string(),
+            description: format!(
+                "{} PRs with redundant review cycles ({} extra dispatches)",
+                sorted_prs.len(),
+                total_extra
+            ),
+            estimated_tokens: total_waste,
+            details,
+        }]
     }
 }
 
@@ -142,15 +149,14 @@ mod tests {
         };
 
         let findings = ReviewCyclesAnalyzer.analyze(&session);
-        // #42 appears in each line (description + prompt), but we deduplicate per line?
-        // Actually each line has 2 mentions of #42, so 6 total dispatches for #42
-        // But the spec says "group by PR number" and count dispatches (Agent tool_use calls)
-        // Each Agent call that mentions #42 counts. But #42 appears twice per call.
-        // We should count unique PR per Agent call? Let's check: extract_pr_numbers returns all occurrences.
-        // That means 2 per line = 6 total. > 2, so extra = 4, waste = 120000.
+        // Returns ONE aggregated finding
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].category, "review_cycles");
         assert!(findings[0].estimated_tokens > 0);
+        assert!(findings[0].description.contains("1 PRs"));
+        // Details should contain one entry for #42
+        assert_eq!(findings[0].details.len(), 1);
+        assert!(findings[0].details[0].contains("#42"));
     }
 
     #[test]

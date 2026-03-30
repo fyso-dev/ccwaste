@@ -62,13 +62,18 @@ impl WasteAnalyzer for FileRereadsAnalyzer {
             }
         }
 
-        // Step 3: Flag files read more than 2 times
-        let mut findings = vec![];
-        for (file_path, count) in &file_read_counts {
-            if *count <= 2 {
-                continue;
-            }
-            let ids = file_read_ids.get(file_path).unwrap();
+        // Step 3: Flag files read more than 2 times, aggregate into one finding
+        let mut details = vec![];
+        let mut total_waste_tokens = 0u64;
+
+        let mut flagged: Vec<_> = file_read_counts
+            .iter()
+            .filter(|(_, c)| **c > 2)
+            .collect();
+        flagged.sort_by(|a, b| b.1.cmp(a.1));
+
+        for (file_path, count) in &flagged {
+            let ids = file_read_ids.get(*file_path).unwrap();
             let total_result_bytes: u64 = ids
                 .iter()
                 .filter_map(|id| result_bytes.get(id))
@@ -78,25 +83,34 @@ impl WasteAnalyzer for FileRereadsAnalyzer {
             } else {
                 total_result_bytes / ids.len() as u64
             };
-            let waste_tokens = (count - 1) * avg_bytes / 4;
+            let waste_tokens = (*count - 1) * avg_bytes / 4;
+            total_waste_tokens += waste_tokens;
 
-            findings.push(WasteFinding {
-                category: "file_rereads".to_string(),
-                description: format!(
-                    "{} read {} times (excess: {})",
-                    file_path,
-                    count,
-                    count - 1
-                ),
-                estimated_tokens: waste_tokens,
-                details: vec![format!(
-                    "avg result size: {} bytes, wasted: ~{} tokens",
-                    avg_bytes, waste_tokens
-                )],
-            });
+            let short_name = file_path
+                .rsplit('/')
+                .next()
+                .unwrap_or(file_path);
+            details.push(format!(
+                "{} x{} (~{}K wasted)",
+                short_name,
+                count,
+                waste_tokens / 1000
+            ));
         }
 
-        findings
+        if flagged.is_empty() {
+            return vec![];
+        }
+
+        vec![WasteFinding {
+            category: "file_rereads".to_string(),
+            description: format!(
+                "{} files read more than twice",
+                flagged.len()
+            ),
+            estimated_tokens: total_waste_tokens,
+            details,
+        }]
     }
 }
 
@@ -122,12 +136,13 @@ mod tests {
             lines,
         );
         let findings = FileRereadsAnalyzer.analyze(&session);
-        // /tmp/foo.rs read 3 times -> flagged; /tmp/bar.rs read 1 time -> not flagged
+        // Returns ONE aggregated finding for all files read > 2 times
         assert_eq!(findings.len(), 1);
         let f = &findings[0];
         assert_eq!(f.category, "file_rereads");
-        assert!(f.description.contains("/tmp/foo.rs"));
-        assert!(f.description.contains("3 times"));
+        assert!(f.description.contains("1 files read more than twice"));
+        // Details should contain foo.rs
+        assert!(f.details.iter().any(|d| d.contains("foo.rs")));
         assert!(f.estimated_tokens > 0);
     }
 }

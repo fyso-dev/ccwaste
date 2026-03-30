@@ -137,24 +137,22 @@ pub fn print_report(report: &Report) {
 
         let finding_count = session.findings.len();
         for (i, finding) in session.findings.iter().enumerate() {
-            let connector = if i == finding_count - 1 {
-                "└─"
-            } else {
-                "├─"
-            };
+            let is_last = i == finding_count - 1;
+            let connector = if is_last { "└─" } else { "├─" };
             println!(
                 "    {} {}: {}",
                 connector,
                 finding.category,
                 format_tokens(finding.estimated_tokens)
             );
-            for detail in &finding.details {
-                let prefix = if i == finding_count - 1 {
-                    "       "
-                } else {
-                    "│      "
-                };
-                println!("{}{}", prefix, detail.dimmed());
+            let detail_prefix = if is_last { "       " } else { "    │  " };
+            let total_details = finding.details.len();
+            for detail in finding.details.iter().take(5) {
+                println!("{}{}", detail_prefix, detail.dimmed());
+            }
+            if total_details > 5 {
+                let more = format!("... and {} more", total_details - 5);
+                println!("{}{}", detail_prefix, more.dimmed());
             }
         }
     }
