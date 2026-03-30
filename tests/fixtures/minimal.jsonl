@@ -1,0 +1,2 @@
+{"type":"system","subtype":"local_command","content":"test","timestamp":"2026-03-30T10:00:00Z","uuid":"abc"}
+{"type":"assistant","message":{"id":"msg_1","role":"assistant","content":[{"type":"text","text":"hello"}],"usage":{"input_tokens":100,"output_tokens":20,"cache_read_input_tokens":0,"cache_creation_input_tokens":50}},"timestamp":"2026-03-30T10:00:01Z","uuid":"def"}
