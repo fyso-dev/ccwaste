@@ -21,7 +21,7 @@ fn is_simple_bash(input: &serde_json::Value) -> bool {
 
 impl WasteAnalyzer for ModelOverkillAnalyzer {
     fn name(&self) -> &str {
-        "model_overkill"
+        "Model overkill"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -97,7 +97,7 @@ impl WasteAnalyzer for ModelOverkillAnalyzer {
             .collect();
 
         vec![WasteFinding {
-            category: "model_overkill".to_string(),
+            category: "Model overkill".to_string(),
             description: format!(
                 "{} opus turns used for simple tool calls",
                 overkill_turns
@@ -159,7 +159,7 @@ mod tests {
         let session = make_session(vec![line]);
         let findings = ModelOverkillAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].category, "model_overkill");
+        assert_eq!(findings[0].category, "Model overkill");
         assert_eq!(findings[0].estimated_tokens, 800); // 4/5 of 1000
         assert!(findings[0].details.iter().any(|d| d.contains("Read: 1 turns")));
     }

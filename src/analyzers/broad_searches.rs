@@ -19,7 +19,7 @@ fn is_broad_path(path: Option<&str>) -> bool {
 
 impl WasteAnalyzer for BroadSearchesAnalyzer {
     fn name(&self) -> &str {
-        "broad_searches"
+        "Broad searches"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -111,7 +111,7 @@ impl WasteAnalyzer for BroadSearchesAnalyzer {
         }
 
         vec![WasteFinding {
-            category: "broad_searches".to_string(),
+            category: "Broad searches".to_string(),
             description: format!(
                 "{} broad Grep/Glob searches (no specific path), ~{} tokens of results",
                 broad_count, estimated_tokens
@@ -191,7 +191,7 @@ mod tests {
         let session = make_session(lines);
         let findings = BroadSearchesAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].category, "broad_searches");
+        assert_eq!(findings[0].category, "Broad searches");
         assert!(findings[0].details.iter().any(|d| d.contains("junk")));
     }
 

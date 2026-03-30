@@ -1,51 +1,32 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
 REPO="fyso-dev/ccwaste"
-BINARY="ccwaste"
+LATEST=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | cut -d'"' -f4)
 
-# Detect OS
-case "$(uname -s)" in
-  Darwin) OS="apple-darwin" ;;
-  Linux)  OS="unknown-linux-gnu" ;;
-  *)      echo "Unsupported OS: $(uname -s)"; exit 1 ;;
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+
+case "$OS" in
+  darwin) OS="apple-darwin" ;;
+  linux) OS="unknown-linux-gnu" ;;
+  *) echo "Unsupported OS: $OS"; exit 1 ;;
 esac
 
-# Detect architecture
-case "$(uname -m)" in
-  x86_64|amd64)  ARCH="x86_64" ;;
+case "$ARCH" in
+  x86_64|amd64) ARCH="x86_64" ;;
   arm64|aarch64) ARCH="aarch64" ;;
-  *)             echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
+  *) echo "Unsupported arch: $ARCH"; exit 1 ;;
 esac
 
 TARGET="${ARCH}-${OS}"
-ASSET="${BINARY}-${TARGET}"
+URL="https://github.com/$REPO/releases/download/$LATEST/ccwaste-$TARGET"
 
-echo "Detected platform: ${TARGET}"
+INSTALL_DIR="${CARGO_HOME:-$HOME/.cargo}/bin"
+mkdir -p "$INSTALL_DIR"
 
-# Get latest release download URL
-DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"
-
-# Choose install directory
-if [ -d "${HOME}/.cargo/bin" ]; then
-  INSTALL_DIR="${HOME}/.cargo/bin"
-elif [ -w "/usr/local/bin" ]; then
-  INSTALL_DIR="/usr/local/bin"
-else
-  INSTALL_DIR="${HOME}/.local/bin"
-  mkdir -p "${INSTALL_DIR}"
-fi
-
-echo "Downloading ${ASSET}..."
-curl -fsSL "${DOWNLOAD_URL}" -o "${INSTALL_DIR}/${BINARY}"
-chmod +x "${INSTALL_DIR}/${BINARY}"
-
-echo "Installed ${BINARY} to ${INSTALL_DIR}/${BINARY}"
-
-# Verify
-if command -v "${BINARY}" &>/dev/null; then
-  echo "Version: $(${BINARY} --version)"
-else
-  echo "Note: ${INSTALL_DIR} is not in your PATH. Add it with:"
-  echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
-fi
+echo "Downloading ccwaste $LATEST for $TARGET..."
+curl -fsSL "$URL" -o "$INSTALL_DIR/ccwaste"
+chmod +x "$INSTALL_DIR/ccwaste"
+echo "Installed ccwaste to $INSTALL_DIR/ccwaste"
+echo "Run 'ccwaste' to get started"

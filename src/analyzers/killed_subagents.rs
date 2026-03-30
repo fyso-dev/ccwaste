@@ -45,7 +45,7 @@ impl KilledSubagentsAnalyzer {
 
 impl WasteAnalyzer for KilledSubagentsAnalyzer {
     fn name(&self) -> &str {
-        "killed_subagents"
+        "Killed subagents"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -54,7 +54,7 @@ impl WasteAnalyzer for KilledSubagentsAnalyzer {
         for subagent in &session.subagents {
             if Self::is_killed(subagent) {
                 findings.push(WasteFinding {
-                    category: "killed_subagents".to_string(),
+                    category: "Killed subagents".to_string(),
                     description: format!(
                         "Subagent '{}' was killed mid-tool-call ({} tokens wasted)",
                         subagent.info.project_name, subagent.total_tokens
@@ -135,7 +135,7 @@ mod tests {
         let session = make_session(vec![sub]);
         let findings = KilledSubagentsAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].category, "killed_subagents");
+        assert_eq!(findings[0].category, "Killed subagents");
         assert_eq!(findings[0].estimated_tokens, 5000);
     }
 

@@ -94,6 +94,78 @@ pub struct Session {
 pub struct Report {
     pub date: String,
     pub sessions: Vec<SessionReport>,
+    pub show_sessions: bool,
+    pub sort_order: String,
+}
+
+#[derive(Debug)]
+pub struct ProjectReport {
+    pub project_name: String,
+    pub session_count: usize,
+    pub subagent_count: usize,
+    pub total_tokens: u64,
+    pub wasted_tokens: u64,
+    pub waste_ratio: f64,
+    pub findings: Vec<WasteFinding>,
+}
+
+impl Report {
+    pub fn grouped_by_project(&self, sort_order: &str) -> Vec<ProjectReport> {
+        let mut map: std::collections::BTreeMap<String, Vec<&SessionReport>> =
+            std::collections::BTreeMap::new();
+        for s in &self.sessions {
+            map.entry(s.project_name.clone()).or_default().push(s);
+        }
+        let mut projects: Vec<ProjectReport> = map
+            .into_iter()
+            .map(|(name, sessions)| {
+                let total_tokens: u64 = sessions.iter().map(|s| s.total_tokens).sum();
+                let wasted_tokens: u64 = sessions.iter().map(|s| s.wasted_tokens).sum();
+                let subagent_count: usize = sessions.iter().map(|s| s.subagent_count).sum();
+                // Merge findings by category
+                let mut cat_map: HashMap<String, WasteFinding> = HashMap::new();
+                for s in &sessions {
+                    for f in &s.findings {
+                        let entry = cat_map.entry(f.category.clone()).or_insert_with(|| {
+                            WasteFinding {
+                                category: f.category.clone(),
+                                description: String::new(),
+                                estimated_tokens: 0,
+                                details: vec![],
+                            }
+                        });
+                        entry.estimated_tokens += f.estimated_tokens;
+                        entry.details.extend(f.details.clone());
+                    }
+                }
+                let mut findings: Vec<WasteFinding> = cat_map.into_values().collect();
+                findings.sort_by(|a, b| b.estimated_tokens.cmp(&a.estimated_tokens));
+                // Trim details to top 5 per finding
+                for f in &mut findings {
+                    f.details.truncate(5);
+                }
+                ProjectReport {
+                    project_name: name,
+                    session_count: sessions.len(),
+                    subagent_count,
+                    total_tokens,
+                    wasted_tokens,
+                    waste_ratio: if total_tokens > 0 {
+                        wasted_tokens as f64 / total_tokens as f64
+                    } else {
+                        0.0
+                    },
+                    findings,
+                }
+            })
+            .collect();
+        match sort_order {
+            "waste" => projects.sort_by(|a, b| b.wasted_tokens.cmp(&a.wasted_tokens)),
+            "tokens" => projects.sort_by(|a, b| b.total_tokens.cmp(&a.total_tokens)),
+            _ => projects.sort_by(|a, b| b.waste_ratio.partial_cmp(&a.waste_ratio).unwrap_or(std::cmp::Ordering::Equal)),
+        }
+        projects
+    }
 }
 
 #[derive(Debug)]
@@ -130,5 +202,11 @@ impl Report {
         let mut sorted: Vec<_> = map.into_iter().collect();
         sorted.sort_by(|a, b| b.1.cmp(&a.1));
         sorted
+    }
+    pub fn session_count(&self) -> usize {
+        self.sessions.len()
+    }
+    pub fn subagent_count(&self) -> usize {
+        self.sessions.iter().map(|s| s.subagent_count).sum()
     }
 }

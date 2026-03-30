@@ -6,7 +6,7 @@ pub struct ToolErrorsAnalyzer;
 
 impl WasteAnalyzer for ToolErrorsAnalyzer {
     fn name(&self) -> &str {
-        "tool_errors"
+        "Tool errors"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -85,7 +85,7 @@ impl WasteAnalyzer for ToolErrorsAnalyzer {
         let total_errors: u64 = errors_by_tool.values().map(|(c, _)| c).sum();
 
         vec![WasteFinding {
-            category: "tool_errors".to_string(),
+            category: "Tool errors".to_string(),
             description: format!(
                 "{} tool errors consuming ~{} estimated tokens",
                 total_errors, estimated_tokens
@@ -120,7 +120,7 @@ mod tests {
         let findings = ToolErrorsAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
         let f = &findings[0];
-        assert_eq!(f.category, "tool_errors");
+        assert_eq!(f.category, "Tool errors");
         assert!(f.estimated_tokens > 0);
         // Should have Bash and Glob errors
         assert!(f.details.iter().any(|d| d.starts_with("Bash:")));

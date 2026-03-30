@@ -6,7 +6,7 @@ pub struct FileRereadsAnalyzer;
 
 impl WasteAnalyzer for FileRereadsAnalyzer {
     fn name(&self) -> &str {
-        "file_rereads"
+        "File re-reads"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -103,7 +103,7 @@ impl WasteAnalyzer for FileRereadsAnalyzer {
         }
 
         vec![WasteFinding {
-            category: "file_rereads".to_string(),
+            category: "File re-reads".to_string(),
             description: format!(
                 "{} files read more than twice",
                 flagged.len()
@@ -139,7 +139,7 @@ mod tests {
         // Returns ONE aggregated finding for all files read > 2 times
         assert_eq!(findings.len(), 1);
         let f = &findings[0];
-        assert_eq!(f.category, "file_rereads");
+        assert_eq!(f.category, "File re-reads");
         assert!(f.description.contains("1 files read more than twice"));
         // Details should contain foo.rs
         assert!(f.details.iter().any(|d| d.contains("foo.rs")));

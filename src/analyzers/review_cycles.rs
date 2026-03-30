@@ -8,7 +8,7 @@ const TOKENS_PER_DISPATCH: u64 = 30000;
 
 impl WasteAnalyzer for ReviewCyclesAnalyzer {
     fn name(&self) -> &str {
-        "review_cycles"
+        "Review cycles"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -58,7 +58,7 @@ impl WasteAnalyzer for ReviewCyclesAnalyzer {
         }
 
         vec![WasteFinding {
-            category: "review_cycles".to_string(),
+            category: "Review cycles".to_string(),
             description: format!(
                 "{} PRs with redundant review cycles ({} extra dispatches)",
                 sorted_prs.len(),
@@ -151,7 +151,7 @@ mod tests {
         let findings = ReviewCyclesAnalyzer.analyze(&session);
         // Returns ONE aggregated finding
         assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].category, "review_cycles");
+        assert_eq!(findings[0].category, "Review cycles");
         assert!(findings[0].estimated_tokens > 0);
         assert!(findings[0].description.contains("1 PRs"));
         // Details should contain one entry for #42

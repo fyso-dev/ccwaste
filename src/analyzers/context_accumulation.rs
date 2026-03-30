@@ -6,7 +6,7 @@ pub struct ContextAccumulationAnalyzer;
 
 impl WasteAnalyzer for ContextAccumulationAnalyzer {
     fn name(&self) -> &str {
-        "context_accumulation"
+        "Context accumulation"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -57,7 +57,7 @@ impl WasteAnalyzer for ContextAccumulationAnalyzer {
         let waste = last - first;
 
         vec![WasteFinding {
-            category: "context_accumulation".to_string(),
+            category: "Context accumulation".to_string(),
             description: format!(
                 "Input context grew from {} to {} tokens ({:.0}% increase) without compaction",
                 first,
@@ -127,7 +127,7 @@ mod tests {
         ]);
         let findings = ContextAccumulationAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].category, "context_accumulation");
+        assert_eq!(findings[0].category, "Context accumulation");
         assert_eq!(findings[0].estimated_tokens, 1000); // 2000 - 1000
     }
 

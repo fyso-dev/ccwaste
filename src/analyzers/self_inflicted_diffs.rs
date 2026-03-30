@@ -5,7 +5,7 @@ pub struct SelfInflictedDiffsAnalyzer;
 
 impl WasteAnalyzer for SelfInflictedDiffsAnalyzer {
     fn name(&self) -> &str {
-        "self_inflicted_diffs"
+        "Self-inflicted diffs"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -56,7 +56,7 @@ impl WasteAnalyzer for SelfInflictedDiffsAnalyzer {
         let estimated_tokens = snapshot_bytes / 4;
 
         vec![WasteFinding {
-            category: "self_inflicted_diffs".to_string(),
+            category: "Self-inflicted diffs".to_string(),
             description: format!(
                 "{} file-history-snapshots triggered by Edit/Write (~{} tokens)",
                 snapshot_count, estimated_tokens
@@ -153,7 +153,7 @@ mod tests {
         let session = make_session(lines);
         let findings = SelfInflictedDiffsAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].category, "self_inflicted_diffs");
+        assert_eq!(findings[0].category, "Self-inflicted diffs");
         assert!(findings[0].estimated_tokens > 0);
     }
 

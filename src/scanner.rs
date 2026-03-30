@@ -11,18 +11,63 @@ pub struct FoundSession {
     pub project_name: String,
 }
 
-pub fn find_sessions_for_today() -> Vec<FoundSession> {
+pub fn find_sessions(days: u32, project_dir: Option<&str>) -> Vec<FoundSession> {
     let today = Local::now().date_naive();
+    let since = today - chrono::Duration::days(days as i64 - 1);
     let claude_dir = dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join(".claude/projects");
     if !claude_dir.exists() {
         return vec![];
     }
-    find_sessions_in_dir(&claude_dir, today)
+
+    // If project_dir given, find the matching project folder directly
+    if let Some(dir) = project_dir {
+        let encoded = dir.replace('/', "-");
+        let project_path = claude_dir.join(&encoded);
+        if project_path.exists() {
+            return find_sessions_in_project(&project_path, since, today);
+        }
+        // Fallback: try partial match
+        if let Ok(entries) = fs::read_dir(&claude_dir) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.contains(&encoded) || name.ends_with(&encoded) {
+                    return find_sessions_in_project(&entry.path(), since, today);
+                }
+            }
+        }
+        return vec![];
+    }
+
+    find_sessions_in_dir(&claude_dir, since, today)
 }
 
-fn find_sessions_in_dir(base: &Path, date: NaiveDate) -> Vec<FoundSession> {
+fn find_sessions_in_project(project_path: &Path, since: NaiveDate, until: NaiveDate) -> Vec<FoundSession> {
+    let mut sessions = vec![];
+    let project_name = extract_project_name(project_path);
+    let Ok(entries) = fs::read_dir(project_path) else { return sessions };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("jsonl") { continue; }
+        if !modified_in_range(&path, since, until) { continue; }
+        let session_id = path.file_stem().unwrap().to_string_lossy().to_string();
+        let subagent_dir = project_path.join(&session_id).join("subagents");
+        let subagent_jsonls = if subagent_dir.exists() {
+            find_jsonl_files_in(&subagent_dir, since, until)
+        } else {
+            vec![]
+        };
+        sessions.push(FoundSession {
+            main_jsonl: path,
+            subagent_jsonls,
+            project_name: project_name.clone(),
+        });
+    }
+    sessions
+}
+
+fn find_sessions_in_dir(base: &Path, since: NaiveDate, until: NaiveDate) -> Vec<FoundSession> {
     let mut sessions = vec![];
     let Ok(projects) = fs::read_dir(base) else {
         return sessions;
@@ -41,13 +86,13 @@ fn find_sessions_in_dir(base: &Path, date: NaiveDate) -> Vec<FoundSession> {
             if path.extension().and_then(|e| e.to_str()) != Some("jsonl") {
                 continue;
             }
-            if !modified_on_date(&path, date) {
+            if !modified_in_range(&path, since, until) {
                 continue;
             }
             let session_id = path.file_stem().unwrap().to_string_lossy().to_string();
             let subagent_dir = project_path.join(&session_id).join("subagents");
             let subagent_jsonls = if subagent_dir.exists() {
-                find_jsonl_files_in(&subagent_dir, date)
+                find_jsonl_files_in(&subagent_dir, since, until)
             } else {
                 vec![]
             };
@@ -61,7 +106,7 @@ fn find_sessions_in_dir(base: &Path, date: NaiveDate) -> Vec<FoundSession> {
     sessions
 }
 
-fn find_jsonl_files_in(dir: &Path, date: NaiveDate) -> Vec<PathBuf> {
+fn find_jsonl_files_in(dir: &Path, since: NaiveDate, until: NaiveDate) -> Vec<PathBuf> {
     let Ok(entries) = fs::read_dir(dir) else {
         return vec![];
     };
@@ -69,13 +114,14 @@ fn find_jsonl_files_in(dir: &Path, date: NaiveDate) -> Vec<PathBuf> {
         .flatten()
         .filter(|e| {
             let p = e.path();
-            p.extension().and_then(|e| e.to_str()) == Some("jsonl") && modified_on_date(&p, date)
+            p.extension().and_then(|e| e.to_str()) == Some("jsonl")
+                && modified_in_range(&p, since, until)
         })
         .map(|e| e.path())
         .collect()
 }
 
-fn modified_on_date(path: &Path, date: NaiveDate) -> bool {
+fn modified_in_range(path: &Path, since: NaiveDate, until: NaiveDate) -> bool {
     let Ok(meta) = fs::metadata(path) else {
         return false;
     };
@@ -83,16 +129,35 @@ fn modified_on_date(path: &Path, date: NaiveDate) -> bool {
         return false;
     };
     let modified_date: chrono::DateTime<Local> = modified.into();
-    modified_date.date_naive() == date
+    let date = modified_date.date_naive();
+    date >= since && date <= until
 }
 
 fn extract_project_name(path: &Path) -> String {
     let name = path.file_name().unwrap_or_default().to_string_lossy();
-    let parts: Vec<&str> = name.split('-').collect();
-    if parts.len() >= 2 {
-        parts[parts.len() - 1].to_string()
+    // Format: -Users-user-Documents-work-fyso-usage
+    // We want the last 2 meaningful segments: "fyso/usage"
+    let parts: Vec<&str> = name.split('-').filter(|s| !s.is_empty()).collect();
+    if parts.len() >= 4 {
+        // Skip Users-user-Documents-work prefix, take last 2
+        let meaningful: Vec<&str> = parts.iter()
+            .skip_while(|p| ["Users", "Documents", "work"].contains(p)
+                || p.chars().next().map(|c| c.is_lowercase()).unwrap_or(false) == false)
+            .copied()
+            .collect();
+        if meaningful.len() >= 2 {
+            format!("{}/{}", meaningful[meaningful.len() - 2], meaningful[meaningful.len() - 1])
+        } else if meaningful.len() == 1 {
+            meaningful[0].to_string()
+        } else if parts.len() >= 2 {
+            format!("{}/{}", parts[parts.len() - 2], parts[parts.len() - 1])
+        } else {
+            parts.last().unwrap_or(&"unknown").to_string()
+        }
+    } else if parts.len() >= 2 {
+        format!("{}/{}", parts[parts.len() - 2], parts[parts.len() - 1])
     } else {
-        name.to_string()
+        parts.last().unwrap_or(&"unknown").to_string()
     }
 }
 

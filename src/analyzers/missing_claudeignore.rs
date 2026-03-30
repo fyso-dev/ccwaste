@@ -16,7 +16,7 @@ const JUNK_DIRS: &[&str] = &[
 
 impl WasteAnalyzer for MissingClaudeignoreAnalyzer {
     fn name(&self) -> &str {
-        "missing_claudeignore"
+        "Missing .claudeignore"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -71,7 +71,7 @@ impl WasteAnalyzer for MissingClaudeignoreAnalyzer {
         details.sort();
 
         vec![WasteFinding {
-            category: "missing_claudeignore".to_string(),
+            category: "Missing .claudeignore".to_string(),
             description: format!(
                 "{} tool result lines include paths from ignorable directories (~{} tokens)",
                 junk_line_count, estimated_tokens
@@ -127,7 +127,7 @@ mod tests {
         let session = make_session(lines);
         let findings = MissingClaudeignoreAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].category, "missing_claudeignore");
+        assert_eq!(findings[0].category, "Missing .claudeignore");
         // 3 junk lines: node_modules, .git, target
         assert_eq!(findings[0].estimated_tokens, 150); // 3 * 50
     }

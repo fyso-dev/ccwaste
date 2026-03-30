@@ -5,7 +5,7 @@ pub struct ClaudeMdBloatAnalyzer;
 
 impl WasteAnalyzer for ClaudeMdBloatAnalyzer {
     fn name(&self) -> &str {
-        "claudemd_bloat"
+        "CLAUDE.md bloat"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -37,7 +37,7 @@ impl WasteAnalyzer for ClaudeMdBloatAnalyzer {
             if content_size > 40000 {
                 let estimated_tokens = content_size / 4;
                 return vec![WasteFinding {
-                    category: "claudemd_bloat".to_string(),
+                    category: "CLAUDE.md bloat".to_string(),
                     description: format!(
                         "System message (CLAUDE.md) is {} bytes (~{} tokens) — consider trimming",
                         content_size, estimated_tokens
@@ -94,7 +94,7 @@ mod tests {
         let session = make_session(vec![line]);
         let findings = ClaudeMdBloatAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].category, "claudemd_bloat");
+        assert_eq!(findings[0].category, "CLAUDE.md bloat");
         assert!(findings[0].estimated_tokens > 10000);
     }
 

@@ -6,7 +6,7 @@ pub struct RepeatedToolSearchAnalyzer;
 
 impl WasteAnalyzer for RepeatedToolSearchAnalyzer {
     fn name(&self) -> &str {
-        "repeated_toolsearch"
+        "Repeated ToolSearch"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -79,7 +79,7 @@ impl WasteAnalyzer for RepeatedToolSearchAnalyzer {
             let waste = (count - 1) * avg_bytes / 4;
 
             findings.push(WasteFinding {
-                category: "repeated_toolsearch".to_string(),
+                category: "Repeated ToolSearch".to_string(),
                 description: format!(
                     "ToolSearch '{}' repeated {} times ({} excess)",
                     query,
@@ -181,7 +181,7 @@ mod tests {
         let findings = RepeatedToolSearchAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
         let f = &findings[0];
-        assert_eq!(f.category, "repeated_toolsearch");
+        assert_eq!(f.category, "Repeated ToolSearch");
         assert!(f.description.contains("select:Read,Edit"));
         assert!(f.description.contains("2 times"));
         assert!(f.estimated_tokens > 0);

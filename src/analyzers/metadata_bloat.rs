@@ -5,7 +5,7 @@ pub struct MetadataBloatAnalyzer;
 
 impl WasteAnalyzer for MetadataBloatAnalyzer {
     fn name(&self) -> &str {
-        "metadata_bloat"
+        "Metadata bloat"
     }
 
     fn analyze(&self, session: &Session) -> Vec<WasteFinding> {
@@ -67,7 +67,7 @@ impl WasteAnalyzer for MetadataBloatAnalyzer {
         }
 
         vec![WasteFinding {
-            category: "metadata_bloat".to_string(),
+            category: "Metadata bloat".to_string(),
             description: format!(
                 "{} metadata messages consuming ~{} estimated tokens",
                 total_count, estimated_tokens
@@ -101,7 +101,7 @@ mod tests {
         let findings = MetadataBloatAnalyzer.analyze(&session);
         assert_eq!(findings.len(), 1);
         let f = &findings[0];
-        assert_eq!(f.category, "metadata_bloat");
+        assert_eq!(f.category, "Metadata bloat");
         assert!(f.estimated_tokens > 0);
         // Should have 3 file-history-snapshot, 2 queue-operation, 2 stop_hook_summary = 7 total
         assert!(f.details.iter().any(|d| d.contains("file-history-snapshot: 3")));

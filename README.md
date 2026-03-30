@@ -1,6 +1,6 @@
 # ccwaste
 
-Claude Code conversation waste analyzer. Scans your JSONL session logs and identifies wasted tokens so you can fix the root causes.
+CLI tool that analyzes Claude Code conversation logs to find wasted tokens. No AI — pure static analysis of JSONL files.
 
 ## Install
 
@@ -8,62 +8,66 @@ Claude Code conversation waste analyzer. Scans your JSONL session logs and ident
 curl -fsSL https://raw.githubusercontent.com/fyso-dev/ccwaste/main/install.sh | bash
 ```
 
-Or build from source:
-
+Or with Cargo:
 ```bash
-cargo install --git https://github.com/fyso-dev/ccwaste.git
+cargo install --git https://github.com/fyso-dev/ccwaste --path ccwaste
 ```
 
 ## Usage
 
 ```bash
-# Analyze last 30 days (default)
-ccwaste
-
-# Analyze last 7 days
-ccwaste --days 7
-
-# Show individual sessions
-ccwaste --sessions
-
-# Sort by worst waste ratio
-ccwaste --order ratio
-
-# Sort by total tokens consumed
-ccwaste --order tokens
-
-# Filter by project directory
-ccwaste --project-dir /path/to/project
-
-# JSON output
-ccwaste --json
-
-# Generate rules and inject into CLAUDE.md
-ccwaste --inject
-
-# Print rules to stdout
-ccwaste --rules
-
-# One-liner for statusLine
-ccwaste --status
+ccwaste                          # last 30 days, grouped by project
+ccwaste -d 7                     # last week
+ccwaste -d 1                     # today only
+ccwaste -o ratio                 # sort by waste ratio
+ccwaste --sessions               # per-session breakdown
+ccwaste --project-dir /path/to   # filter by project
+ccwaste --json                   # JSON output
+ccwaste --status                 # one-liner for Claude Code statusLine
+ccwaste --rules                  # print optimization rules
+ccwaste --inject                 # write rules to ~/.claude/ccwaste-rules.md
 ```
 
-## Analyzers
+## What it detects
 
-| Analyzer | What it detects |
+| Analyzer | Detects |
 |---|---|
-| :mag: Broad Searches | Grep/glob patterns that match too many files |
-| :scroll: CLAUDE.md Bloat | Oversized CLAUDE.md files burning tokens on every message |
-| :chart_with_upwards_trend: Context Accumulation | Sessions where context grows without bound |
-| :open_file_folder: File Re-reads | Same file read multiple times in one session |
-| :skull: Killed Subagents | Subagent tasks that were cancelled before completing |
-| :package: Metadata Bloat | Excessive tool metadata in conversation turns |
-| :eyes: Missing .claudeignore | Projects without .claudeignore letting noise into context |
-| :hammer: Model Overkill | Opus used where Sonnet would suffice |
-| :repeat: Repeated ToolSearch | Same tool searched for multiple times |
-| :arrows_counterclockwise: Review Cycles | Fix-then-revert loops that waste tokens |
-| :boom: Self-inflicted Diffs | Large diffs caused by the model's own edits |
-| :x: Tool Errors | Tool calls that return errors |
+| Review cycles | Same PR reviewed >2 times |
+| Killed subagents | Agents interrupted mid-work |
+| Context accumulation | Input tokens growing without /compact |
+| Metadata bloat | file-history-snapshots, queue-ops, hooks |
+| File re-reads | Same file read >2 times |
+| Tool errors | Failed tool calls and retries |
+| Missing .claudeignore | Results with node_modules, .git, etc |
+| Broad searches | Grep/Glob without specific path |
+| Self-inflicted diffs | Snapshots triggered by own edits |
+| Model overkill | Opus used for simple Read/Glob/Bash |
+| Repeated ToolSearch | Same tool schema queried multiple times |
+| CLAUDE.md bloat | System prompt >10K tokens |
+
+## StatusLine integration
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "ccwaste --status -d 7"
+  }
+}
+```
+
+Shows: `🗑 28M (1%) 💀subagents 10M 36% 🔄reviews 8.6M 30%`
+
+## Prompt injection
+
+Generate and inject optimization rules based on your actual waste data:
+
+```bash
+ccwaste --inject   # writes ~/.claude/ccwaste-rules.md + adds @include to CLAUDE.md
+ccwaste --rules    # preview rules without writing
+```
 
 ## License
 
