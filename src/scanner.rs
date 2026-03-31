@@ -11,12 +11,16 @@ pub struct FoundSession {
     pub project_name: String,
 }
 
-pub fn find_sessions(days: u32, project_dir: Option<&str>) -> Vec<FoundSession> {
+pub fn find_sessions(days: u32, project_dir: Option<&str>, claude_base: Option<&Path>) -> Vec<FoundSession> {
     let today = Local::now().date_naive();
     let since = today - chrono::Duration::days(days as i64 - 1);
-    let claude_dir = dirs::home_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".claude/projects");
+    let claude_dir = match claude_base {
+        Some(base) => base.join("projects"),
+        None => dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join(".claude")
+            .join("projects"),
+    };
     if !claude_dir.exists() {
         return vec![];
     }
@@ -188,5 +192,26 @@ mod tests {
         let files = find_jsonl_files(&fixture_dir);
         assert!(!files.is_empty());
         assert!(files.iter().any(|f| f.path.ends_with("minimal.jsonl")));
+    }
+
+    #[test]
+    fn test_find_sessions_with_custom_claude_base() {
+        let tmp = std::env::temp_dir().join("ccwasted_test_claude_base");
+        let project_dir = tmp.join("projects").join("-test-project");
+        std::fs::create_dir_all(&project_dir).unwrap();
+
+        // Copy a fixture jsonl into the fake project dir with a recent mtime
+        let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/minimal.jsonl");
+        let dst = project_dir.join("session-abc123.jsonl");
+        std::fs::copy(&src, &dst).unwrap();
+
+        let sessions = find_sessions(30, None, Some(&tmp));
+        std::fs::remove_dir_all(&tmp).unwrap();
+
+        assert!(!sessions.is_empty(), "should find sessions in custom claude_base");
+        assert!(
+            sessions[0].main_jsonl.starts_with(&project_dir),
+            "session path should be under the custom base, not ~/.claude"
+        );
     }
 }
