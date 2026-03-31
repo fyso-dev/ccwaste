@@ -8,6 +8,7 @@ mod types;
 
 use chrono::Local;
 use clap::Parser;
+use std::path::PathBuf;
 use types::{Report, SessionInfo, SessionReport};
 
 #[derive(Parser)]
@@ -46,16 +47,15 @@ struct Cli {
     project_dir: Option<String>,
 
     /// Path to Claude instance directory (default: ~/.claude). Use to target ~/.claude-work, ~/.claude-personal, etc.
-    #[arg(long, short = 'C')]
-    claude_dir: Option<String>,
+    #[arg(long, short = 'C', value_hint = clap::ValueHint::DirPath)]
+    claude_dir: Option<PathBuf>,
 }
 
 fn main() {
     let cli = Cli::parse();
     let today = Local::now().date_naive();
 
-    let claude_dir_path: Option<std::path::PathBuf> = cli.claude_dir.as_deref().map(std::path::PathBuf::from);
-    let claude_dir = claude_dir_path.as_deref();
+    let claude_dir = cli.claude_dir.as_deref();
     let found = scanner::find_sessions(cli.days, cli.project_dir.as_deref(), claude_dir);
     if found.is_empty() {
         if cli.json {

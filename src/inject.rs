@@ -1,7 +1,7 @@
 use crate::report::format_tokens;
 use crate::types::Report;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 struct Rule {
     category: &'static str,
@@ -107,7 +107,7 @@ pub fn generate_rules(report: &Report) -> String {
     lines.join("\n")
 }
 
-pub fn inject_rules(report: &Report, claude_base: Option<&std::path::Path>) {
+pub fn inject_rules(report: &Report, claude_base: Option<&Path>) {
     let rules_content = generate_rules(report);
 
     let claude_dir = match claude_base {
